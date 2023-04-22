@@ -1,5 +1,6 @@
 """This is a template for Auto-GPT plugins."""
 import abc
+from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from typing import Any, Dict, List, Optional, Tuple, TypeVar, TypedDict
 
 from abstract_singleton import AbstractSingleton, Singleton
@@ -12,16 +13,16 @@ class Message(TypedDict):
     content: str
 
 
-class AutoGPTPluginTemplate(AbstractSingleton, metaclass=Singleton):
+class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
     """
     This is a template for Auto-GPT plugins.
     """
 
     def __init__(self):
         super().__init__()
-        self._name = "Auto-GPT-Plugin-Template"
+        self._name = "Auto-GPT-Cloner-Plugin"
         self._version = "0.1.0"
-        self._description = "This is a template for Auto-GPT plugins."
+        self._description = "This plugin lets Auto-GPT clone itself, with all its powers."
 
     @abc.abstractmethod
     def can_handle_on_response(self) -> bool:
@@ -37,16 +38,14 @@ class AutoGPTPluginTemplate(AbstractSingleton, metaclass=Singleton):
         """This method is called when a response is received from the model."""
         pass
 
-    @abc.abstractmethod
     def can_handle_post_prompt(self) -> bool:
         """This method is called to check that the plugin can
         handle the post_prompt method.
 
         Returns:
             bool: True if the plugin can handle the post_prompt method."""
-        return False
+        return True
 
-    @abc.abstractmethod
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         """This method is called just after the generate_prompt is called,
             but actually before the prompt is generated.
@@ -57,7 +56,14 @@ class AutoGPTPluginTemplate(AbstractSingleton, metaclass=Singleton):
         Returns:
             PromptGenerator: The prompt generator.
         """
-        pass
+        def start_autogpt_clone(name: str, task: str, prompt: str):
+            return (f"""To clone yourself, you must do the following 3 steps:
+                    1. Create a settings.yaml file with the filename: {name}_ai_settings and contents in the format: <format>
+                    2. Then run command 'python -m ../autogpt -c -l 10 -C {settings_file} -y'
+                    3. Monitor {name}_output.txt for info on how your clone is performing
+                    """)
+            
+        prompt.add_command("start_autogpt_clone", "Create a cloned sub-agent with access to the full Auto-GPT functionality.", )
 
     @abc.abstractmethod
     def can_handle_on_planning(self) -> bool:
@@ -186,6 +192,7 @@ class AutoGPTPluginTemplate(AbstractSingleton, metaclass=Singleton):
         Returns:
             Tuple[str, Dict[str, Any]]: The command name and the arguments.
         """
+        # Return "write_to_file" => settings file
         pass
 
     @abc.abstractmethod
