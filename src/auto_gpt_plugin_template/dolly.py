@@ -33,7 +33,9 @@ def create_clone(name: str, goals: str):
         with open(settings_filepath, "r") as f:
             settings = f.read()
             settings = settings.replace("<CLONE_NAME>", name)
+            settings = settings.replace("<REPLICA_NAME>", name)
             settings = settings.replace("<CLONE_GOALS>", goals)
+            settings = settings.replace("<REPLICA_GOALS>", goals)
             write_to_file(new_settings_file, settings)
             
         new_settings_filepath = path_in_workspace(new_settings_file)
@@ -47,3 +49,8 @@ def create_clone(name: str, goals: str):
         
     debug = "--debug" if plugin.debug else ""
     execute_shell_popen(f"cd .. && MEMORY_INDEX={memory_index} python -m autogpt -c -l {plugin.continuous_limit} -C {new_settings_filepath} {debug}")
+    
+def replicate(name: str, goals: str):
+    """'Replicate' is less confusing for GPT 3.5
+    """
+    create_clone(name, goals)
