@@ -10,11 +10,11 @@ The "create_clone" command starts a new AutoGPT process, optionally with its own
 
 As a bonus, the separate processes run concurrently, which can speed up total execution time for your task.
 
-**Usage:**
+## Usage
 
 You can tell AutoGPT to clone itself, as part of its tasks:
 
-Goals:
+**Example Goals:**
 - Create a clone (choose a name <CLONE_NAME> for it) to search reddit for "topic" and save the results to reddit_results.txt
 - Create a second clone (choose a name <CLONE_NAME> for it) to download the latest tweets about "topic" and save the results to twitter_results.txt
 - Once the files have been created, compare their contents...
