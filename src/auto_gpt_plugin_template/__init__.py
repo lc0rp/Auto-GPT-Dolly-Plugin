@@ -1,9 +1,8 @@
 """This is a template for Auto-GPT plugins."""
 import abc
+import os
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from typing import Any, Dict, List, Optional, Tuple, TypeVar, TypedDict
-
-from abstract_singleton import AbstractSingleton, Singleton
 
 PromptGenerator = TypeVar("PromptGenerator")
 
@@ -13,38 +12,28 @@ class Message(TypedDict):
     content: str
 
 
-class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
+class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
     """
-    This is a template for Auto-GPT plugins.
+    AutoGPTDolly is a cloner plugin for Auto-GTP. 
+    This plugin adds a 'create_clone' command that lets Auto-GPT build an army of powerful minions.
     """
 
     def __init__(self):
         super().__init__()
-        self._name = "Auto-GPT-Cloner-Plugin"
+        self._name = "Auto-GPT-Dolly-Plugin"
         self._version = "0.1.0"
-        self._description = "This plugin lets Auto-GPT clone itself, with all its powers."
+        self._description = (
+            "This plugin adds a 'create_clone' command that lets Auto-GPT build an army of powerful minions."
+        )
+        
+        self.debug = os.getenv("DOLLY_DEBUG", "False") == "True"
+        self.max_clone_num = os.getenv("DOLLY_MAX_CLONE_NUM", 5)
+        self.continuous_limit = os.getenv("DOLLY_CONTINUOUS_LIMIT", 5)
+        self.separate_memory_index = os.getenv("DOLLY_SEPARATE_MEMORY_INDEX", "False") == "True"
+        self.separate_settings = os.getenv("DOLLY_SEPARATE_SETTINGS", "False") == "True"
+        self.settings_template = os.getenv("DOLLY_SETTINGS_TEMPLATE", "ai_settings_clone_template.yaml")
+        self.separate_instructions = os.getenv("DOLLY_SEPARATE_INSTRUCTIONS", "False") == "True"
 
-    @abc.abstractmethod
-    def can_handle_on_response(self) -> bool:
-        """This method is called to check that the plugin can
-        handle the on_response method.
-
-        Returns:
-            bool: True if the plugin can handle the on_response method."""
-        return False
-
-    @abc.abstractmethod
-    def on_response(self, response: str, *args, **kwargs) -> str:
-        """This method is called when a response is received from the model."""
-        pass
-
-    def can_handle_post_prompt(self) -> bool:
-        """This method is called to check that the plugin can
-        handle the post_prompt method.
-
-        Returns:
-            bool: True if the plugin can handle the post_prompt method."""
-        return True
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         """This method is called just after the generate_prompt is called,
@@ -56,16 +45,39 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
         Returns:
             PromptGenerator: The prompt generator.
         """
-        def start_autogpt_clone(name: str, task: str, prompt: str):
-            return (f"""To clone yourself, you must do the following 3 steps:
-                    1. Create a settings.yaml file with the filename: {name}_ai_settings and contents in the format: <format>
-                    2. Then run command 'python -m ../autogpt -c -l 10 -C {settings_file} -y'
-                    3. Monitor {name}_output.txt for info on how your clone is performing
-                    """)
-            
-        prompt.add_command("start_autogpt_clone", "Create a cloned sub-agent with access to the full Auto-GPT functionality.", )
+        from .dolly import create_clone
+        
+        prompt.add_command(
+            "Create Clone",
+            "create_clone", 
+            {
+                "name": "<clone_name>",
+                "goals": "<clone_goals>"
+            },
+            create_clone,
+        )
+        return prompt
+    
+    def can_handle_post_prompt(self) -> bool:
+        """This method is called to check that the plugin can
+        handle the post_prompt method.
 
-    @abc.abstractmethod
+        Returns:
+            bool: True if the plugin can handle the post_prompt method."""
+        return True
+
+    def can_handle_on_response(self) -> bool:
+        """This method is called to check that the plugin can
+        handle the on_response method.
+
+        Returns:
+            bool: True if the plugin can handle the on_response method."""
+        return False
+
+    def on_response(self, response: str, *args, **kwargs) -> str:
+        """This method is called when a response is received from the model."""
+        pass
+
     def can_handle_on_planning(self) -> bool:
         """This method is called to check that the plugin can
         handle the on_planning method.
@@ -74,7 +86,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
             bool: True if the plugin can handle the on_planning method."""
         return False
 
-    @abc.abstractmethod
     def on_planning(
         self, prompt: PromptGenerator, messages: List[Message]
     ) -> Optional[str]:
@@ -86,7 +97,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
         """
         pass
 
-    @abc.abstractmethod
     def can_handle_post_planning(self) -> bool:
         """This method is called to check that the plugin can
         handle the post_planning method.
@@ -95,7 +105,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
             bool: True if the plugin can handle the post_planning method."""
         return False
 
-    @abc.abstractmethod
     def post_planning(self, response: str) -> str:
         """This method is called after the planning chat completion is done.
 
@@ -107,7 +116,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
         """
         pass
 
-    @abc.abstractmethod
     def can_handle_pre_instruction(self) -> bool:
         """This method is called to check that the plugin can
         handle the pre_instruction method.
@@ -116,7 +124,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
             bool: True if the plugin can handle the pre_instruction method."""
         return False
 
-    @abc.abstractmethod
     def pre_instruction(self, messages: List[Message]) -> List[Message]:
         """This method is called before the instruction chat is done.
 
@@ -128,7 +135,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
         """
         pass
 
-    @abc.abstractmethod
     def can_handle_on_instruction(self) -> bool:
         """This method is called to check that the plugin can
         handle the on_instruction method.
@@ -137,7 +143,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
             bool: True if the plugin can handle the on_instruction method."""
         return False
 
-    @abc.abstractmethod
     def on_instruction(self, messages: List[Message]) -> Optional[str]:
         """This method is called when the instruction chat is done.
 
@@ -149,7 +154,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
         """
         pass
 
-    @abc.abstractmethod
     def can_handle_post_instruction(self) -> bool:
         """This method is called to check that the plugin can
         handle the post_instruction method.
@@ -158,7 +162,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
             bool: True if the plugin can handle the post_instruction method."""
         return False
 
-    @abc.abstractmethod
     def post_instruction(self, response: str) -> str:
         """This method is called after the instruction chat is done.
 
@@ -170,7 +173,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
         """
         pass
 
-    @abc.abstractmethod
     def can_handle_pre_command(self) -> bool:
         """This method is called to check that the plugin can
         handle the pre_command method.
@@ -179,7 +181,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
             bool: True if the plugin can handle the pre_command method."""
         return False
 
-    @abc.abstractmethod
     def pre_command(
         self, command_name: str, arguments: Dict[str, Any]
     ) -> Tuple[str, Dict[str, Any]]:
@@ -195,7 +196,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
         # Return "write_to_file" => settings file
         pass
 
-    @abc.abstractmethod
     def can_handle_post_command(self) -> bool:
         """This method is called to check that the plugin can
         handle the post_command method.
@@ -204,7 +204,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
             bool: True if the plugin can handle the post_command method."""
         return False
 
-    @abc.abstractmethod
     def post_command(self, command_name: str, response: str) -> str:
         """This method is called after the command is executed.
 
@@ -217,7 +216,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
         """
         pass
 
-    @abc.abstractmethod
     def can_handle_chat_completion(
         self, messages: Dict[Any, Any], model: str, temperature: float, max_tokens: int
     ) -> bool:
@@ -234,7 +232,6 @@ class AutoGPTClonerPlugin(AutoGPTPluginTemplate):
               bool: True if the plugin can handle the chat_completion method."""
         return False
 
-    @abc.abstractmethod
     def handle_chat_completion(
         self, messages: List[Message], model: str, temperature: float, max_tokens: int
     ) -> str:
