@@ -10,7 +10,12 @@ The "create_clone" command starts a new AutoGPT process, optionally with its own
 
 As a bonus, the separate processes run concurrently, which can speed up total execution time for your task.
 
+**GPT 3.5**
+GPT 3.5 may get confused by the "create_clone" command, and instead try to clone a repository. We provide an alias: "replicate" that seems to work better for GPT 3.5
+
 ## Usage
+
+You need EXECUTE_LOCAL_COMMANDS=True
 
 You can tell AutoGPT to clone itself, as part of its tasks:
 
@@ -18,6 +23,9 @@ You can tell AutoGPT to clone itself, as part of its tasks:
 - Create a clone (choose a name <CLONE_NAME> for it) to search reddit for "topic" and save the results to reddit_results.txt
 - Create a second clone (choose a name <CLONE_NAME> for it) to download the latest tweets about "topic" and save the results to twitter_results.txt
 - Once the files have been created, compare their contents...
+
+**GPT 3.5**
+For GPT 3.5, you may have better luck with <REPLICA_NAME> and <REPLICA_GOALS> 
 
 **Limitations:**
 - Inter-process communcation is a work in progress. For now, communication is mostly one way, via the instructions or goals that the main process gives to the clones.

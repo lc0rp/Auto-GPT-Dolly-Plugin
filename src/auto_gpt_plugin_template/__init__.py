@@ -45,16 +45,27 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
         Returns:
             PromptGenerator: The prompt generator.
         """
-        from .dolly import create_clone
+        from .dolly import create_clone, replicate
         
         prompt.add_command(
-            "Create Clone",
-            "create_clone", 
+            "create_clone",
+            "Create AutoGPT Clone",
             {
                 "name": "<clone_name>",
                 "goals": "<clone_goals>"
             },
             create_clone,
+        )
+        
+        # Replicate works better with GPT 3.5 - confuses it less.
+        prompt.add_command(
+            "replicate",
+            "Replicate AutoGPT",
+            {
+                "name": "<replica_name>",
+                "goals": "<replica_goals>"
+            },
+            replicate,
         )
         return prompt
     
