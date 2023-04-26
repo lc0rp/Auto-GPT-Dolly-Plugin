@@ -21,17 +21,17 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
     def __init__(self):
         super().__init__()
         self._name = "Auto-GPT-Dolly-Plugin"
-        self._version = "0.1.0"
+        self._version = "0.1.2"
         self._description = (
             "This plugin adds a 'create_clone' command that lets Auto-GPT build an army of powerful minions."
         )
         
         self.debug = os.getenv("DOLLY_DEBUG", "False") == "True"
-        self.max_clone_num = os.getenv("DOLLY_MAX_CLONE_NUM", 5)
+        self.max_num = os.getenv("DOLLY_MAX_NUM", 5)
         self.continuous_limit = os.getenv("DOLLY_CONTINUOUS_LIMIT", 5)
         self.separate_memory_index = os.getenv("DOLLY_SEPARATE_MEMORY_INDEX", "False") == "True"
         self.separate_settings = os.getenv("DOLLY_SEPARATE_SETTINGS", "False") == "True"
-        self.settings_template = os.getenv("DOLLY_SETTINGS_TEMPLATE", "ai_settings_clone_template.yaml")
+        self.settings_template = os.getenv("DOLLY_SETTINGS_TEMPLATE", "ai_settings_template.yaml")
         self.separate_instructions = os.getenv("DOLLY_SEPARATE_INSTRUCTIONS", "False") == "True"
 
 

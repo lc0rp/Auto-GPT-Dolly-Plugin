@@ -1,32 +1,31 @@
 import os
 
 from autogpt.config.config import Config
-from autogpt.workspace import path_in_workspace
 
 from . import AutoGPTDollyPlugin
 from autogpt.commands.execute_code import execute_shell_popen
 from autogpt.commands.file_operations import write_to_file
 
 plugin = AutoGPTDollyPlugin()
+cfg = Config()
 
-def get_settings_filepath():
-    settings_file = Config().ai_settings_file
-    cwd = os.getcwd()
-    return os.path.abspath(os.path.join(cwd, '..', settings_file))
 
 def create_clone(name: str, goals: str):
     if plugin.separate_instructions:
         # Create instructions
-        write_to_file(f"instructions_{name}.txt", goals)
+        instructions_file = cfg.workspace_path + f"/instructions_{name}.txt"
+        write_to_file(instructions_file, goals)
     
     if plugin.separate_settings:
         if plugin.settings_template:
             settings_file = plugin.settings_template
-            settings_filepath = path_in_workspace(settings_file)
         else:
-            settings_filepath = get_settings_filepath()
+            settings_file = cfg.ai_settings_file
+            
+        settings_filepath =  cfg.workspace_path + "/" + settings_file
 
-        new_settings_file = f"ai_settings_clone_{name}.yaml"
+        new_settings_file = f"ai_settings_{name}.yaml"
+        new_settings_filepath = cfg.workspace_path + "/" + new_settings_file
         # Create settings file
         # Replace <CLONE_NAME> with the clone name
         # Replace <CLONE_GOALS> with the clone goals
@@ -34,13 +33,13 @@ def create_clone(name: str, goals: str):
             settings = f.read()
             settings = settings.replace("<CLONE_NAME>", name)
             settings = settings.replace("<REPLICA_NAME>", name)
+            settings = settings.replace("{ai_name}", name)
             settings = settings.replace("<CLONE_GOALS>", goals)
             settings = settings.replace("<REPLICA_GOALS>", goals)
-            write_to_file(new_settings_file, settings)
+            write_to_file(new_settings_filepath, settings)
             
-        new_settings_filepath = path_in_workspace(new_settings_file)
     else:
-        new_settings_filepath = get_settings_filepath()
+        new_settings_file = cfg.ai_settings_file
 
     # Update memory variable
     memory_index = os.getenv("MEMORY_INDEX", "auto-gpt")
@@ -48,7 +47,7 @@ def create_clone(name: str, goals: str):
         memory_index = f"{memory_index}-{name}"
         
     debug = "--debug" if plugin.debug else ""
-    execute_shell_popen(f"cd .. && MEMORY_INDEX={memory_index} python -m autogpt -c -l {plugin.continuous_limit} -C {new_settings_filepath} {debug}")
+    execute_shell_popen(f"cd {cfg.workspace_path} && MEMORY_INDEX={memory_index} python -m autogpt -c -l {plugin.continuous_limit} -C {new_settings_file} {debug}")
     
 def replicate(name: str, goals: str):
     """'Replicate' is less confusing for GPT 3.5
