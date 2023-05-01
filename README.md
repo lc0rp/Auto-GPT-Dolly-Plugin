@@ -1,36 +1,45 @@
 # AutoGPTDolly (Beta) - a cloner plugin for Auto-GTP
 
+## <u>Overview</u>
 
-## Updates!
-
-# v 0.2.0 - May 1 2023
-
-1. Personality Prompting - Dolly now lets you alter the clone personalities using the wellknown BIG 5 personality traits: AKA OCEAN: Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism. See: Personality Prompting below
-2. Act As Attributes - Related, you can define a set of attributes for each clone - lazy, witty, talkative, anything goes.
-3. Better Tracking - One key piece of feedback was that it was hard to see what each clone was doing. Now each clone gets their own output and erorr log files. 
-
-# Coming soon: 
-
-- Two way communication with each clone... 
-
-
-## Overview
-
-This plugin adds a "clone_autogpt" command that lets Auto-GPT build an army of powerful minions.
-
-AutoGPT can already create AI agents, but sometimes it helps to be able to create additional AutoGTP processes, which can access the tools, plugins and full functionality of AutoGTP.
+This plugin adds a "clone_autogpt" command that lets Auto-GPT build an army of powerful minions. AutoGPT can already create AI agents, but sometimes it helps to be able to create additional AutoGTP processes, which can access the tools, plugins and full functionality of AutoGTP.
 
 The "clone_autogpt" command starts a new AutoGPT process, optionally with its own memory, instructions and output files. The processes run in continuous mode for 5 cycles by default. See the Configuration section for how to increase or decrease the number of cycles.
 
-As a bonus, the separate processes run concurrently, which can speed up total execution time for your task.
+**Concurrency**: As a bonus, the separate processes run concurrently, which can reduce up total execution time for your task.
 
+## <u>Updates!</u>
+
+## **0.2.0 - May 1 2023**
+
+1. **Personality Prompting**
+<br/>Dolly now lets you alter the clone personalities using the wellknown BIG 5 personality traits: AKA OCEAN: Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism. See: Personality Prompting below.
+
+2. **'Act As' Attributes** 
+<br/>Related, you can define a set of attributes for each clone - lazy, witty, talkative, anything goes.
+
+3. **Better Monitoring**
+<br/>One key piece of feedback was that it was hard to see what each clone was doing. Now each clone gets their own output and erorr log files. 
+
+## <u>Coming Soon</u>
+
+What am I working on right now? 
+- Two way communication with each clone... 
+- Separate terminals per clone
+- More examples to get you started
+- Anything you'd like to see? Let me know!
+
+## <u>Usage Details</u>
+
+This plugin adds a "clone_autogpt" command that starts a new AutoGPT process, optionally with its own memory, instructions and output files. The processes run in continuous mode for 5 cycles by default. See the Configuration section for how to increase or decrease the number of cycles.
+
+---
 **GPT 3.5**
-~GPT 3.5 may get confused by the "clone_autogpt" command, and instead try to clone a repository. We provide an alias: "replicate" that seems to work better for GPT 3.5~
+~~GPT 3.5 may get confused by the "clone_autogpt" command, and instead try to clone a repository. We provide an alias: "replicate" that seems to work better for GPT 3.5~~~
 
-Removed from 0.2.0 - may return in a future release.
+- Removed from 0.2.0 - may return in a future release.
 
-## Usage
-
+---
 You need EXECUTE_LOCAL_COMMANDS=True
 
 You can tell AutoGPT to clone itself, as part of its tasks:
