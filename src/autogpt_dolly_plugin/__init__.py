@@ -22,26 +22,51 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
         """Initialize the plugin."""
         super().__init__()
         self._name = "Auto-GPT-Dolly-Plugin"
-        self._version = "0.2.0"
+        self._version = "0.3.0"
         self._description = f"This plugin adds a {CLONE_CMD} command that lets Auto-GPT build an army of powerful minions."
 
+        # Enable debug mode (--debug)
         self.debug = os.getenv("DOLLY_DEBUG", "False") == "True"
+
+        # Limit the number of clones
         self.max_num = int(os.getenv("DOLLY_MAX_NUM", 5))
+
+        # Enable continuous mode (--continuous) & set continuous limit
+        self.continuous_mode = os.getenv("DOLLY_CONTINUOUS_MODE", "True") == "True"
         self.continuous_limit = int(os.getenv("DOLLY_CONTINUOUS_LIMIT", 5))
+
+        # Separate memory.
+        # This gets passed as an environment variable to the model,
+        # overriding what's in the .env file.
+        # See each memory backend for more details.
         self.separate_memory_index = (
             os.getenv("DOLLY_SEPARATE_MEMORY_INDEX", "False") == "True"
         )
+
+        # Separate settings (--ai-settings)
+        # If this is true, the ai_settings_template.yaml file will be used to generate
+        # a new ai_settings.yaml file for each clone.
         self.separate_settings = os.getenv("DOLLY_SEPARATE_SETTINGS", "False") == "True"
         self.settings_template = os.getenv(
             "DOLLY_SETTINGS_TEMPLATE", "ai_settings_template.yaml"
         )
+
+        # Separate instructions
+        # This is specific to the wonda prompt method that keeps ai_settings.yaml static between runs
+        # And instead uses a separate instructions.txt file for instructions.
+        # See: https://github.com/samuelbutler/wonda for details.
+        # If this is enabled, an instructions file will be generated with the goals for each clone.
+        # The main ai_settings.yaml file must instruct AutoGPT to read and follow instructions
+        # in the "instrucitons.txt" file.
         self.separate_instructions = (
             os.getenv("DOLLY_SEPARATE_INSTRUCTIONS", "False") == "True"
         )
 
-        self.enable_interactivity = (
-            os.getenv("DOLLY_ENABLE_INTERACTIVITY", "False") == "True"
-        )
+        env_var_list = os.getenv("DOLLY_ENV_VARS_LIST", "").split(",")
+        self.env_vars = {}
+        for key in env_var_list:
+            env_var = f"DOLLY_{key.upper()}_LIST"
+            self.env_vars[key.upper()] = os.getenv(env_var, "").split(",")
 
         self.enable_new_terminal_experiment = (
             os.getenv("DOLLY_ENABLE_NEW_TERMINAL_EXPERIMENT", "False") == "True"
@@ -58,7 +83,7 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
         Returns:
             PromptGenerator: The prompt generator.
         """
-        from .dolly import Dolly
+        from .dolly_manager import DollyManager
 
         prompt.add_command(
             CLONE_CMD,
@@ -67,10 +92,10 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
                 "name": "<name>",
                 "role": "<role>",
                 "goals": "<goals_str_csv>",
-                "big5_personality": "<big5_personality_1to5_int_csv_optional>",
-                "attributes": "<personality_attributes_str_csv_optional>",
+                "ffm_ocean_traits": "<ffm_ocean_traits_csv_or_0,0,0,0,0>",
+                "character_attributes": "<character_attributes_str_csv_optional>",
             },
-            Dolly.clone_autogpt,
+            DollyManager.clone_autogpt,
         )
 
         return prompt

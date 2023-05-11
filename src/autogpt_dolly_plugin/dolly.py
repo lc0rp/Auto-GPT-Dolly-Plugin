@@ -1,9 +1,7 @@
-import json
 import os
 from pathlib import Path
 import platform
 import subprocess
-from typing import Optional
 
 try:
     from autogpt.config.config import Config
@@ -20,277 +18,210 @@ cfg = Config()
 
 
 class Dolly:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def format_goals_str(goals: str):
-        """
-        This function formats the input goals string from JSON or a comma-separated format
-        into a Markdown list string.
-
-        Parameters:
-            goals (str): The input goals string, either in JSON format or as a
-            comma-separated list.
-
-        Returns:
-            str: A formatted Markdown string with goals listed as bullet points.
-        """
-        try:
-            goals = json.loads(goals)
-        except json.decoder.JSONDecodeError:
-            goals = (
-                goals.replace("[", "")
-                .replace("]", "")
-                .replace('"', "")
-                .replace("'", "")
-            )
-            goals = goals.split(",")
-
-        if isinstance(goals, str):
-            goals = [goals]
-
-        goals = [goal.replace("-", "").strip() for goal in goals]
-        goals = [f"- {goal}" for goal in goals]
-        goals = "\n".join(goals)
-        return goals
-
-    @staticmethod
-    def clone_autogpt(
+    def __init__(
+        self,
         name: str,
         role: str,
-        goals: str,
-        big5_personality: Optional[str] = "5,5,3,5,1",
-        attributes: Optional[list[str]] = "helpful,encouraging,accurate",
+        goals: list[str],
+        continuous_mode: bool,
+        continuous_limit: int = 5,
+        ffm_ocean_traits: list[int] = [5, 5, 3, 5, 1],
+        character_attributes: list[str] = ["helpful", "encouraging", "accurate"],
     ):
-        """
-        Creates a new AutoGPT expert.
+        # Attributes
+        self.name = name
+        self.role = role
+        self.goals = goals
+        self.continuous_mode = continuous_mode
+        self.continuous_limit = continuous_limit
+        self.ffm_ocean_traits = ffm_ocean_traits
+        self.character_attributes = character_attributes
+        self.workspace_path = Path(cfg.workspace_path)
 
-        Parameters:
-            name (str): The name of the new autogpt instance.
-            role (str): The "Act As" role of the new expert (e.g. "A hungry AI")
-            goals (str): A comma separated list of goals for the new expert.
-            big5_personality (str): A comma separated list of Big 5 scores on a scale of 1-5,
-            e.g. "1,2,3,4,5"
-            attribues (list(str)): A comma separated list of free form attributes for the
-            new expert. e.g. "hungry,smart,funny, like einstein"
-        """
-        goals = Dolly.format_goals_str(goals)
+        # Flags to track if we've been dispersed yet.
+        self._process: subprocess.Popen = None
+        self._index: int = None
+        self._instructions_dispersed: bool = False
+        self._settings_dispersed: bool = False
 
-        workspace_path = Path(cfg.workspace_path)
-        if plugin.separate_instructions:
-            instructions_file = workspace_path / f"instructions_{name}.txt"
-            instructions = f'You\'re an Autonomous AI, NAME={name}, ACT AS ROLE={role}\nWith BIG5_PERSONALITY="{big5_personality}" and ATTRIBUTES="{attributes}".\nGOALS:\n{goals}'
-            results = Dolly.write_to_file(instructions_file, instructions)
-            assert results.exists()
+    @property
+    def dispersed(self):
+        return self._process is not None
 
-        if plugin.separate_settings:
-            new_settings_file = Dolly.create_settings_file(
-                name, role, goals, big5_personality, attributes, workspace_path
+    @property
+    def process(self):
+        return self._process
+
+    @process.setter
+    def process(self, value: subprocess.Popen):
+        if self._process is not None:
+            raise ValueError("Cannot set process more than once.")
+        self._process = value
+
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, value: int):
+        if self.index is not None:
+            raise ValueError("Cannot set index more than once.")
+        if not isinstance(value, int):
+            raise ValueError("Index must be an integer.")
+        self._index = value
+
+    @property
+    def goals_as_str(self):
+        return "- " + ("\n- ".join(self.goals)) if self.goals else ""
+
+    @property
+    def ffm_ocean_traits_as_str(self):
+        return ",".join(str(score) for score in self.ffm_ocean_traits)
+
+    @property
+    def character_attributes_as_str(self):
+        return ",".join(self.character_attributes)
+
+    def disperse(self):
+        if self.process:
+            raise ValueError(
+                f"Cannot disperse more than once. Already dispersed with PID={self.process.pid}"
             )
 
-        else:
-            new_settings_file = Path(cfg.ai_settings_file)
+        self._disperse_instructions()
+        self._disperse_settings()
+        self._disperse_shell_process()
+        self.deployed = True
 
-        memory_index = os.getenv("MEMORY_INDEX", "auto-gpt")
-        if plugin.separate_memory_index:
-            memory_index = f"{memory_index}-{name}"
+        if self.process:
+            return self.process.pid
 
-        debug = "--debug" if plugin.debug else ""
+    def _disperse_instructions(self):
+        if self._instructions_dispersed:
+            raise ValueError("Instructions already dispersed.")
 
-        cmd = f"MEMORY_INDEX={memory_index} python -m autogpt -C {new_settings_file} {debug}"
+        if not plugin.separate_instructions:
+            self._instructions = None
+            self._instructions_dispersed = True
+            return
 
-        if not plugin.enable_interactivity:
-            cmd += f" -c -l {plugin.continuous_limit}"
-
-        stdout_file = workspace_path / f"output-{name}.txt"
-        stderr_file = workspace_path / f"error-{name}.txt"
-
-        return Dolly.execute_shell_command(
-            cmd, stdout_file=str(stdout_file), stderr_file=str(stderr_file)
+        instructions_file = self.workspace_path / self.name / "instructions.txt"
+        self._instructions = (
+            f"You're an Autonomous AI, NAME={self.name},"
+            f" ACT AS ROLE={self.role}\nWith FFM_OCEAN_TRAITS='{self.ffm_ocean_traits_as_str}'"
+            f" and CHARACTER_ATTRIBUTES='{self.character_attributes_as_str}'"
+            f" \nGOALS:\n{self.goals_as_str}"
         )
+        from .dolly_manager import DollyManager
 
-    @staticmethod
-    def execute_shell_command(
-        cmd, stdout_file="output.txt", stderr_file="error.txt"
-    ) -> str:
-        """
-        Attempts to open a new terminal window, execute a shell command with Popen and return an english description
-          of the event and the process id. It falls back to the same terminal if it can't open a new one.
+        results_file = DollyManager.write_to_file(instructions_file, self._instructions)
+        self._instructions_dispersed = results_file.exists()
 
-        Args:
-            cmd (str): The cmd to run in the new terminal
+    def _disperse_settings(self):
+        if not self._instructions_dispersed:
+            raise ValueError("Disperse instructions before settings.")
 
-        Returns:
-            str: Success message and ID of the new process
-        """
-        with open(stdout_file, "w") as fout, open(stderr_file, "w") as ferr:
-            result = subprocess.Popen(cmd, stdout=fout, stderr=ferr, shell=True)
+        if self._settings_dispersed:
+            raise ValueError("Settings already dispersed.")
 
-        return f"Subprocess started with PID: {result.pid}"
-
-    @staticmethod
-    def execute_shell_command_old(
-        cmd, stdout_file="output.txt", stderr_file="error.txt"
-    ) -> str:
-        """
-        Attempts to open a new terminal window, execute a shell command with Popen and return an english description
-          of the event and the process id. It falls back to the same terminal if it can't open a new one.
-
-        Args:
-            cmd (str): The cmd to run in the new terminal
-
-        Returns:
-            str: Success message and ID of the new process
-        """
-        current_dir = os.getcwd()
-
-        # Change dir into workspace if necessary
-        if cfg.workspace_path not in current_dir:
-            os.chdir(cfg.workspace_path)
-
-        result = False
-        new_terminal_cmd = ""
-        creationflags = 0
-
-        if plugin.enable_new_terminal_experiment:
-            system = platform.system()
-            # Mac terminal
-            if system == "Darwin":
-                new_terminal_cmd = [
-                    "open",
-                    "-a",
-                    "Terminal",
-                    "-n",
-                    "--args",
-                    "bash",
-                    "-c",
-                    cmd,
-                ]
-
-            # Windows cmd
-            elif system == "Windows":
-                new_terminal_cmd = ["start", "cmd.exe", "/k", cmd]
-                creationflags = subprocess.CREATE_NEW_CONSOLE
-
-            # Linux terminal
-            else:
-                new_terminal_cmd = ["gnome-terminal", "--", "bash", "-c", cmd]
-
-        with open(stdout_file, "w") as fout, open(stderr_file, "w") as ferr:
-            try:
-                result = subprocess.Popen(
-                    new_terminal_cmd,
-                    stdout=fout,
-                    stderr=ferr,
-                    creationflags=creationflags,
-                    shell=True,
-                )
-            except FileNotFoundError:
-                print("Error: Could not launch a new terminal.")
-
-            if not result:
-                result = subprocess.Popen(cmd, stdout=fout, stderr=ferr, shell=True)
-
-        os.chdir(current_dir)
-
-        return f"Subprocess started with PID: {result.pid}"
-
-    @staticmethod
-    def create_settings_file(
-        name, role, goals, big5_personality, attributes, workspace_path
-    ):
-        """
-        Creates a new settings file for an AutoGPT clone.
-
-        Parameters:
-            name (str): The name of the new clone.
-            role (str): The "Act As" role of the new clone (e.g. "A hungry AI")
-            goals (str): A bulleted list of goals for the new clone.
-            big5_personality (str): A comma separated list of Big 5 scores on a scale of 1-5,
-            e.g. "1,2,3,4,5"
-            attribues (list(str)): A comma separated list of free form attributes for the
-            new clone. e.g. "hungry,smart,funny, like einstein"
-
-        Returns:
-            str: The name of the new settings file.
-        """
-        if plugin.settings_template:
-            settings_file = plugin.settings_template
+        if not plugin.separate_settings:
+            self.settings_filepath = (
+                Path(cfg.ai_settings_file)
+                if Path(cfg.ai_settings_file).is_absolute()
+                else self.workspace_path / cfg.ai_settings_file
+            )
+            self._settings_dispersed = True
         else:
-            settings_file = cfg.ai_settings_file
+            if plugin.settings_template:
+                template_file = plugin.settings_template
+            else:
+                template_file = cfg.ai_settings_file
 
-        settings_filepath = workspace_path / settings_file
+            source_path = (
+                Path(template_file)
+                if Path(template_file).is_absolute()
+                else self.workspace_path / template_file
+            )
 
-        new_settings_file = f"ai_settings_{name}.yaml"
-        new_settings_filepath = workspace_path / new_settings_file
-        with open(settings_filepath, "r") as f:
-            settings = f.read()
+            self.settings_filepath = (
+                self.workspace_path / self.name / "ai_settings.yaml"
+            )
 
-            replace_map = {
-                "<CLONE_NAME>": name,
-                "<REPLICA_NAME>": name,
-                "<EXPERT_NAME>": name,
-                "<NAME>": name,
-                "{ai_name}": name,
-            }
+            settings = source_path.read_text()
 
+            # Replace name placeholders
+            settings = settings.replace("<NAME>", self.name)
+
+            role = self.role
             # If personality placeholders are not in the settings file, add them to the role
-            if (
-                big5_personality
-                and big5_personality.lower() != "none"
-                and big5_personality.strip() != ""
-            ):
-                if "<BIG5_PERSONALITY>" in settings:
-                    replace_map["<BIG5_PERSONALITY>"] = big5_personality.strip()
-                else:
-                    role += f' with BIG5_PERSONALITY="{big5_personality.strip()}"'
+            scores_as_str = self.ffm_ocean_traits_as_str
+            if "<FFM_OCEAN_TRAITS>" in settings:
+                settings = settings.replace("<FFM_OCEAN_TRAITS>", scores_as_str.strip())
+            else:
+                role += f" with FFM_OCEAN_TRAITS='{scores_as_str.strip()}'"
 
             # If attribute placeholders are not in the settings file, add them to the role
-            if attributes and attributes.lower() != "none" and attributes.strip() != "":
-                if "<ATTRIBUTES>" in settings:
-                    replace_map["<ATTRIBUTES>"] = attributes
-                else:
-                    role += f' with ATTRIBUTES="{attributes}"'
+            attributes_as_str = self.character_attributes_as_str
+            if "<CHARACTER_ATTRIBUTES>" in settings:
+                settings = settings.replace(
+                    "<CHARACTER_ATTRIBUTES>", attributes_as_str.strip()
+                )
+            else:
+                role += f' with ATTRIBUTES="{attributes_as_str.strip()}"'
 
             # If role placeholders are not in the settings file, prepend the role to the goals
-            role_replacements = {
-                "<CLONE_ROLE>": role,
-                "<REPLICA_ROLE>": role,
-                "<EXPERT_ROLE>": role,
-                "<ROLE>": role,
-            }
-
-            if any(
-                [placeholder in settings for placeholder in role_replacements.keys()]
-            ):
-                replace_map.update(role_replacements)
+            goals = self.goals_as_str.strip()
+            if "<ROLE>" in settings:
+                settings = settings.replace("<ROLE>", role)
             else:
                 goals = f"- ACT AS ROLE={role}\n{goals}"
 
-            replace_map.update(
-                {
-                    "<CLONE_GOALS>": goals,
-                    "<REPLICA_GOALS>": goals,
-                    "<EXPERT_GOALS>": goals,
-                    "<GOALS>": goals,
-                }
-            )
-        for old, new in replace_map.items():
-            settings = settings.replace(old, new)
+            settings = settings.replace("<GOALS>", goals)
+            self._settings = settings
 
-        result = Dolly.write_to_file(new_settings_filepath, settings)
-        assert result.exists()
-        return new_settings_filepath
+            from .dolly_manager import DollyManager
 
-    @staticmethod
-    def write_to_file(filepath: Path, text: str):
-        """
-        Writes text to a file. (Stub for testing)
+            results_file = DollyManager.write_to_file(self.settings_filepath, settings)
+            self._settings_dispersed = results_file.exists()
 
-        Parameters:
-            filepath (str): The path to the file to write to.
-            text (str): The text to write to the file.
-        """
-        filepath.write_text(text)
-        return filepath
+    def _disperse_shell_process(self):
+        if not self._settings_dispersed:
+            raise ValueError("Disperse settings before shell process.")
+
+        if self.dispersed:
+            raise ValueError("Already dispersed.")
+
+        self.memory_index = os.getenv("MEMORY_INDEX", "auto-gpt")
+        if plugin.separate_memory_index:
+            self.memory_index = f"{self.memory_index}-{self.name}"
+
+        env_vars = {"MEMORY_INDEX": self.memory_index}
+        for key, value in plugin.env_vars.items():
+            env_vars[key] = value[self.index]
+
+        cmd = []
+        for key, value in env_vars.items():
+            cmd += [f"{key}={value}"]
+
+        cmd += [
+            f"",
+            "python",
+            "-m",
+            "autogpt",
+            "-C",
+            self.settings_filepath,
+        ]
+
+        if plugin.debug:
+            cmd.append("--debug")
+
+        if plugin.continuous_mode:
+            cmd += ["-c", "-l", str(plugin.continuous_limit)]
+
+        self._shell_cmd = cmd
+
+        stdout_file = self.workspace_path / self.name / "output.txt"
+        stderr_file = self.workspace_path / self.name / "error.yaml"
+
+        with open(stdout_file, "w") as fout, open(stderr_file, "w") as ferr:
+            self.process = subprocess.Popen(cmd, stdout=fout, stderr=ferr, shell=True)
