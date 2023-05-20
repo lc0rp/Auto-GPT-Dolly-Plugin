@@ -1,3 +1,9 @@
+"""
+This plugin allows Auto-GPT to execute interactive shell commands and get feedback from the user."
+
+Build by @lcOrp on github & @lc0rp#0081 on discord
+For support: discord...
+"""
 import os
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from typing import Any, Dict, List, Optional, Tuple, TypeVar, TypedDict
@@ -10,67 +16,19 @@ class Message(TypedDict):
     content: str
 
 
-CLONE_CMD = "clone_autogpt"
-
-
-class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
+class AutoGPTInteractiveShellCommandsPlugin(AutoGPTPluginTemplate):
     """
-    AutoGPTDolly is a cloner plugin for Auto-GTP. This plugin adds the command: clone_autogpt
+    Interactive Shell Commands allows Auto-GPT to execute interactive shell commands and get feedback from the user."
+
+    Build by @lcOrp on github.
     """
 
     def __init__(self):
         """Initialize the plugin."""
         super().__init__()
-        self._name = "Auto-GPT-Dolly-Plugin"
-        self._version = "0.3.0"
-        self._description = f"This plugin adds a {CLONE_CMD} command that lets Auto-GPT build an army of powerful minions."
-
-        # Enable debug mode (--debug)
-        self.debug = os.getenv("DOLLY_DEBUG", "False") == "True"
-
-        # Limit the number of clones
-        self.max_num = int(os.getenv("DOLLY_MAX_NUM", 5))
-
-        # Enable continuous mode (--continuous) & set continuous limit
-        self.continuous_mode = os.getenv("DOLLY_CONTINUOUS_MODE", "True") == "True"
-        self.continuous_limit = int(os.getenv("DOLLY_CONTINUOUS_LIMIT", 5))
-
-        # Separate memory.
-        # This gets passed as an environment variable to the model,
-        # overriding what's in the .env file.
-        # See each memory backend for more details.
-        self.separate_memory_index = (
-            os.getenv("DOLLY_SEPARATE_MEMORY_INDEX", "False") == "True"
-        )
-
-        # Separate settings (--ai-settings)
-        # If this is true, the ai_settings_template.yaml file will be used to generate
-        # a new ai_settings.yaml file for each clone.
-        self.separate_settings = os.getenv("DOLLY_SEPARATE_SETTINGS", "False") == "True"
-        self.settings_template = os.getenv(
-            "DOLLY_SETTINGS_TEMPLATE", "ai_settings_template.yaml"
-        )
-
-        # Separate instructions
-        # This is specific to the wonda prompt method that keeps ai_settings.yaml static between runs
-        # And instead uses a separate instructions.txt file for instructions.
-        # See: https://github.com/samuelbutler/wonda for details.
-        # If this is enabled, an instructions file will be generated with the goals for each clone.
-        # The main ai_settings.yaml file must instruct AutoGPT to read and follow instructions
-        # in the "instrucitons.txt" file.
-        self.separate_instructions = (
-            os.getenv("DOLLY_SEPARATE_INSTRUCTIONS", "False") == "True"
-        )
-
-        env_var_list = os.getenv("DOLLY_ENV_VARS_LIST", "").split(",")
-        self.env_vars = {}
-        for key in env_var_list:
-            env_var = f"DOLLY_{key.upper()}_LIST"
-            self.env_vars[key.upper()] = os.getenv(env_var, "").split(",")
-
-        self.enable_new_terminal_experiment = (
-            os.getenv("DOLLY_ENABLE_NEW_TERMINAL_EXPERIMENT", "False") == "True"
-        )
+        self._name = "Auto-GPT-Interactive-Shell-Commands-Plugin"
+        self._version = "0.1.0"
+        self._description = f"This plugin allows Auto-GPT to execute interactive shell commands and get feedback from the user."
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         """
@@ -83,19 +41,20 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
         Returns:
             PromptGenerator: The prompt generator.
         """
-        from .dolly_manager import DollyManager
+        from .interactive_shell_commands import execute_interactive_shell, ask_user
 
         prompt.add_command(
-            CLONE_CMD,
-            "instruct(Clone AutoGPT for complex tasks. Alias:Replicate,CreateReplica)",
-            {
-                "name": "<name>",
-                "role": "<role>",
-                "goals": "<goals_str_csv>",
-                "ffm_ocean_traits": "<ffm_ocean_traits_csv_or_0,0,0,0,0>",
-                "character_attributes": "<character_attributes_str_csv_optional>",
-            },
-            DollyManager.clone_autogpt,
+            "execute_interactive_shell",
+            "Execute interactive shell command.",
+            {"command_line": "<command_line>"},
+            execute_interactive_shell,
+        )
+
+        prompt.add_command(
+            "ask_user",
+            "Ask user for input.",
+            {"prompts": "<list: prompts>"},
+            ask_user,
         )
 
         return prompt
