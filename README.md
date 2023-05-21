@@ -87,10 +87,10 @@ EXECUTE_LOCAL_COMMANDS=True
 ##DOLLY_SEPARATE_INSTRUCTIONS (Default=False): If you're using the wonda prompting technique, this will cause AutoGPT to write the clone's goals to an instrunctions_<CLONE_NAME>.txt file.
 #DOLLY_DEBUG=False
 #DOLLY_CONTINOUS_LIMIT=Default
-#DOLLY_SEPERATE_MEMORY_INDEX=False
-#DOLLY_SEPERATE_SETTINGS=False
+#DOLLY_SEPARATE_MEMORY_INDEX=False
+#DOLLY_SEPARATE_SETTINGS=False
 #DOLLY_SETTINGS_TEMPLATE=Default
-#DOLLY_SEPERATE_INSTRUCTIONS=False
+#DOLLY_SEPARATE_INSTRUCTIONS=False
 
 ################################################################################
 ALLOWLISTED PLUGINS
