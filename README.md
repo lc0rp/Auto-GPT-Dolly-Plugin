@@ -86,9 +86,11 @@ EXECUTE_LOCAL_COMMANDS=True
 ##DOLLY_SETTINGS_TEMPLATE (Default=ai_settings_clone_template.yaml): If DOLLY_SEPARATE_SETTINGS is True, this file will be used to create settings files for each clone. It should be placed in the working directory. Within the file, <CLONE_NAME> will be replaced with the name that AutoGPT chooses for the clone, and <CLONE_GOALS> will be replaced with the tasks that AutoGPT wants the clone to perform.
 ##DOLLY_SEPARATE_INSTRUCTIONS (Default=False): If you're using the wonda prompting technique, this will cause AutoGPT to write the clone's goals to an instrunctions_<CLONE_NAME>.txt file.
 #DOLLY_DEBUG=False
-#DOLLY_SEPERATE_INDEX=False
+#DOLLY_CONTINOUS_LIMIT=Default
+#DOLLY_SEPARATE_MEMORY_INDEX=False
+#DOLLY_SEPARATE_SETTINGS=False
 #DOLLY_SETTINGS_TEMPLATE=Default
-#DOLLY_SEPERATE_INSTRUCTIONS=False
+#DOLLY_SEPARATE_INSTRUCTIONS=False
 
 ################################################################################
 ALLOWLISTED PLUGINS
