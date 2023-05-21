@@ -94,7 +94,7 @@ EXECUTE_LOCAL_COMMANDS=True
 ALLOWLISTED PLUGINS
 ################################################################################
 
-ALLOWLISTED_PLUGINS=AutoGPTDolly
+ALLOWLISTED_PLUGINS=AutoGPTDollyPlugin
 ```
 
 ## Feedback
