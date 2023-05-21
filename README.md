@@ -90,8 +90,6 @@ EXECUTE_LOCAL_COMMANDS=True
 #DOLLY_SETTINGS_TEMPLATE=TRUE
 #DOLLY_SEPERATE_INSTRUCTIONS=
 
-**Allowlist Plugin**: In your `.env` file, search for `ALLOWLISTED_PLUGINS` and add this plugin
-
 ################################################################################
 ALLOWLISTED PLUGINS
 ################################################################################
