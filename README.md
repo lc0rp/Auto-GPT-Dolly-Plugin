@@ -45,12 +45,12 @@ You need EXECUTE_LOCAL_COMMANDS=True
 You can tell AutoGPT to clone itself, as part of its tasks:
 
 **Example Goals:**
-- Create a clone (choose a name <CLONE_NAME> for it) to search reddit for "topic" and save the results to reddit_results.txt
-- Create a second clone (choose a name <CLONE_NAME> for it) to download the latest tweets about "topic" and save the results to twitter_results.txt
+- Create a clone (choose a name <NAME> for it) to search reddit for "topic" and save the results to reddit_results.txt
+- Create a second clone (choose a name <NAME> for it) to download the latest tweets about "topic" and save the results to twitter_results.txt
 - Once the files have been created, compare their contents...
 
 **GPT 3.5**
-For GPT 3.5, you may have better luck with <REPLICA_NAME> and <REPLICA_GOALS> 
+For GPT 3.5, you may have better luck with <NAME> and <GOALS> 
 
 **Limitations:**
 - Inter-process communcation is a work in progress. For now, communication is mostly one way, via the instructions or goals that the main process gives to the clones.
@@ -83,6 +83,6 @@ This plugin can be configured via the following .env variables:
 - DOLLY_SEPARATE_INSTRUCTIONS (Default=False): If you're using the wonda prompting technique, this will cause AutoGPT to write the clone's goals to an instrunctions_<CLONE_NAME>.txt file.
 
 
-## Feedback
+## Help and discussion:
 
-Looking forward to your feedback!
+Discord: https://discord.com/channels/1092243196446249134/1099609931562369024

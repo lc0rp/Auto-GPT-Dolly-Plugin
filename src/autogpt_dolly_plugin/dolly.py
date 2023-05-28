@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 import platform
@@ -15,6 +16,8 @@ from . import AutoGPTDollyPlugin
 
 plugin = AutoGPTDollyPlugin()
 cfg = Config()
+
+logger = logging.getLogger(__name__)
 
 
 class Dolly:
@@ -184,6 +187,12 @@ class Dolly:
             results_file = DollyManager.write_to_file(self.settings_filepath, settings)
             self._settings_dispersed = results_file.exists()
 
+    def _disperse_shell_process_trio(self):
+        """
+        Disperse the shell process for the AI.
+        """
+        pass
+
     def _disperse_shell_process(self):
         if not self._settings_dispersed:
             raise ValueError("Disperse settings before shell process.")
@@ -191,25 +200,26 @@ class Dolly:
         if self.dispersed:
             raise ValueError("Already dispersed.")
 
+        env_vars = os.environ.copy()
         self.memory_index = os.getenv("MEMORY_INDEX", "auto-gpt")
         if plugin.separate_memory_index:
             self.memory_index = f"{self.memory_index}-{self.name}"
 
-        env_vars = {"MEMORY_INDEX": self.memory_index}
+        env_vars["MEMORY_INDEX"] = self.memory_index
         for key, value in plugin.env_vars.items():
-            env_vars[key] = value[self.index]
+            try:
+                env_vars[key] = value[self.index]
+            except IndexError:
+                logger.exception(f"Index out of range for env var {key}"),
 
-        cmd = []
-        for key, value in env_vars.items():
-            cmd += [f"{key}={value}"]
-
-        cmd += [
-            f"",
+        cmd = [
             "python",
             "-m",
             "autogpt",
             "-C",
-            self.settings_filepath,
+            str(self.settings_filepath),
+            "-w",
+            str(self.workspace_path / self.name),
         ]
 
         if plugin.debug:
@@ -219,9 +229,19 @@ class Dolly:
             cmd += ["-c", "-l", str(plugin.continuous_limit)]
 
         self._shell_cmd = cmd
+        self._shell_env_vars = env_vars
 
         stdout_file = self.workspace_path / self.name / "output.txt"
-        stderr_file = self.workspace_path / self.name / "error.yaml"
+        stderr_file = self.workspace_path / self.name / "error.txt"
 
+        # stdout_file = subprocess.PIPE
+        # stderr_file = subprocess.PIPE
+
+        print(f"Dolly: Running Command: {' '.join(cmd)}")
+        print(
+            f"Dolly: Environment Variables: {', '.join(f'{k}={v}' for k, v in env_vars.items())}"
+        )
         with open(stdout_file, "w") as fout, open(stderr_file, "w") as ferr:
-            self.process = subprocess.Popen(cmd, stdout=fout, stderr=ferr, shell=True)
+            self.process = subprocess.Popen(
+                cmd, stdin=subprocess.PIPE, stdout=fout, stderr=ferr, env=env_vars
+            )

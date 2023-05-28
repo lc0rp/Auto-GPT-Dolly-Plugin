@@ -9,7 +9,7 @@ plugin = AutoGPTDollyPlugin()
 
 class DollyManager:
     @classmethod
-    def clone_autogpt(
+    def deploy_autogpt_expert(
         cls,
         name: str,
         role: str,
@@ -18,7 +18,7 @@ class DollyManager:
         character_attributes: Optional[list[str]] = "helpful,encouraging,accurate",
     ):
         """
-        Creates a new AutoGPT expert.
+        Creates and deploys new AutoGPT expert agent.
         Parameters:
             name (str): The name of the new autogpt instance.
             role (str): The "Act As" role of the new expert (e.g. "A hungry AI")

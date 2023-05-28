@@ -1,3 +1,18 @@
+"""
+Dolly is a powerful plugin package designed to extend the capabilities of Auto-GPT by enabling 
+it to generate expert agents by starting new Auto-GPT processes, aka cloning itself. 
+
+These agents possess the same knowledge and access to the same suite of tools as Auto-GPT and can perform
+tasks in parallel to enable faster, collaborative generation of results. These expert agents can also 
+interpret and execute the same commands as Auto-GPT, ensuring consistency and ease of use.
+
+In the future, Auto-GPT shall introduce native multi-agent support within its core. However, until
+that goal is achieved, Dolly provides a solution for introducing multi-agent functionality without 
+requiring alterations to the AutoGPT core structure.
+
+Build by @lcOrp on github.
+For help and discussion: https://discord.com/channels/1092243196446249134/1099609931562369024
+"""
 import os
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from typing import Any, Dict, List, Optional, Tuple, TypeVar, TypedDict
@@ -10,12 +25,23 @@ class Message(TypedDict):
     content: str
 
 
-CLONE_CMD = "clone_autogpt"
+LEGACY_CLONE_COMMAND = "clone_autogpt"
+# Picked by GPT-4 because it's more descriptive.
+CLONE_COMMAND = "deploy_autogpt_expert"
 
 
 class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
     """
-    AutoGPTDolly is a cloner plugin for Auto-GTP. This plugin adds the command: clone_autogpt
+    Dolly is a powerful plugin package designed to extend the capabilities of Auto-GPT by enabling
+    it to generate expert agents by starting new Auto-GPT processes, aka cloning itself.
+
+    These agents possess the same knowledge and access to the same suite of tools as Auto-GPT and can perform
+    tasks in parallel to enable faster, collaborative generation of results. These expert agents can also
+    interpret and execute the same commands as Auto-GPT, ensuring consistency and ease of use.
+
+    In the future, Auto-GPT shall introduce native multi-agent support within its core. However, until
+    that goal is achieved, Dolly provides a solution for introducing multi-agent functionality without
+    requiring alterations to the AutoGPT core structure.
     """
 
     def __init__(self):
@@ -23,7 +49,8 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
         super().__init__()
         self._name = "Auto-GPT-Dolly-Plugin"
         self._version = "0.3.0"
-        self._description = f"This plugin adds a {CLONE_CMD} command that lets Auto-GPT build an army of powerful minions."
+        self._command = os.getenv("DOLLY_COMMAND", CLONE_COMMAND)
+        self._description = f"This plugin adds a '{self._command}' command that lets Auto-GPT build expert agents. For help and discussion: https://discord.com/channels/1092243196446249134/1099609931562369024"
 
         # Enable debug mode (--debug)
         self.debug = os.getenv("DOLLY_DEBUG", "False") == "True"
@@ -72,6 +99,18 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
             os.getenv("DOLLY_ENABLE_NEW_TERMINAL_EXPERIMENT", "False") == "True"
         )
 
+        # Print out a summary of the settings
+        print(f"Auto-GPT Dolly Plugin Settings (v {self._version}):")
+        print("==============================================")
+        print(f"  - Command: {self._command}")
+        print(f"  - Agents in Debug Mode: {self.debug}")
+        print(f"  - Max Agents Num: {self.max_num}")
+        print(f"  - Agents in Continuous Mode: {self.continuous_mode}")
+        print(f"  - Agents Continuous Mode Max Cycles: {self.continuous_limit}")
+        print(f"  - Separate Memory Per Agent: {self.separate_memory_index}")
+        print(f"  - Separate Settings Per Agent: {self.separate_settings}")
+        print(f"  - Separate Instructions Per Agent: {self.separate_instructions}")
+
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         """
         This method is called just after the generate_prompt is called,
@@ -85,9 +124,11 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
         """
         from .dolly_manager import DollyManager
 
+        description = f"instruct(Start AutoGPT Agent for complex tasks. Alias:{LEGACY_CLONE_COMMAND},Replicate,CreateReplica)"
+
         prompt.add_command(
-            CLONE_CMD,
-            "instruct(Clone AutoGPT for complex tasks. Alias:Replicate,CreateReplica)",
+            self._command,
+            description,
             {
                 "name": "<name>",
                 "role": "<role>",
@@ -95,7 +136,7 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
                 "ffm_ocean_traits": "<ffm_ocean_traits_csv_or_0,0,0,0,0>",
                 "character_attributes": "<character_attributes_str_csv_optional>",
             },
-            DollyManager.clone_autogpt,
+            DollyManager.deploy_autogpt_expert,
         )
 
         return prompt
