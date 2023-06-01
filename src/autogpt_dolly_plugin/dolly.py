@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class Dolly:
+    """ This classs represents one agent"""
     def __init__(
         self,
         name: str,
@@ -40,6 +41,7 @@ class Dolly:
         self.ffm_ocean_traits = ffm_ocean_traits
         self.character_attributes = character_attributes
         self.workspace_path = Path(cfg.workspace_path)
+        self.settings_filepath = None 
 
         # Flags to track if we've been dispersed yet.
         self._process: subprocess.Popen = None
@@ -75,6 +77,7 @@ class Dolly:
 
     @property
     def goals_as_str(self):
+        """ Returns the goals as a string, with each goal on a new line."""
         return "- " + ("\n- ".join(self.goals)) if self.goals else ""
 
     @property
@@ -94,7 +97,6 @@ class Dolly:
         self._disperse_instructions()
         self._disperse_settings()
         self._disperse_shell_process()
-        self.deployed = True
 
         if self.process:
             return self.process.pid

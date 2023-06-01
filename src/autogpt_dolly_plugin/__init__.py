@@ -14,13 +14,15 @@ Build by @lcOrp on github.
 For help and discussion: https://discord.com/channels/1092243196446249134/1099609931562369024
 """
 import os
-from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from typing import Any, Dict, List, Optional, Tuple, TypeVar, TypedDict
+from auto_gpt_plugin_template import AutoGPTPluginTemplate
+
 
 PromptGenerator = TypeVar("PromptGenerator")
 
 
 class Message(TypedDict):
+    """ Message type. """
     role: str
     content: str
 
@@ -48,7 +50,7 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
         """Initialize the plugin."""
         super().__init__()
         self._name = "Auto-GPT-Dolly-Plugin"
-        self._version = "0.3.0"
+        self._version = "0.3.1"
         self._command = os.getenv("DOLLY_COMMAND", CLONE_COMMAND)
         self._description = f"This plugin adds a '{self._command}' command that lets Auto-GPT build expert agents. For help and discussion: https://discord.com/channels/1092243196446249134/1099609931562369024"
 
@@ -56,11 +58,11 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
         self.debug = os.getenv("DOLLY_DEBUG", "False") == "True"
 
         # Limit the number of clones
-        self.max_num = int(os.getenv("DOLLY_MAX_NUM", 5))
+        self.max_num = int(os.getenv("DOLLY_MAX_NUM", "5"))
 
         # Enable continuous mode (--continuous) & set continuous limit
         self.continuous_mode = os.getenv("DOLLY_CONTINUOUS_MODE", "True") == "True"
-        self.continuous_limit = int(os.getenv("DOLLY_CONTINUOUS_LIMIT", 5))
+        self.continuous_limit = int(os.getenv("DOLLY_CONTINUOUS_LIMIT", "5"))
 
         # Separate memory.
         # This gets passed as an environment variable to the model,
@@ -347,4 +349,58 @@ class AutoGPTDollyPlugin(AutoGPTPluginTemplate):
         Returns:
             str: The resulting response.
         """
+    
+    def can_handle_text_embedding(self, text: str) -> bool:
+        """This method is called to check that the plugin can
+          handle the text_embedding method.
+        Args:
+            text (str): The text to be convert to embedding.
+          Returns:
+              bool: True if the plugin can handle the text_embedding method."""
+        return False
+
+    def handle_text_embedding(self, text: str) -> list:
+        """This method is called when the chat completion is done.
+        Args:
+            text (str): The text to be convert to embedding.
+        Returns:
+            list: The text embedding.
+        """
         pass
+
+    def can_handle_user_input(self, user_input: str) -> bool:
+        """This method is called to check that the plugin can
+        handle the user_input method.
+
+        Args:
+            user_input (str): The user input.
+
+        Returns:
+            bool: True if the plugin can handle the user_input method."""
+        return False
+
+    def user_input(self, user_input: str) -> str:
+        """This method is called to request user input to the user.
+
+        Args:
+            user_input (str): The question or prompt to ask the user.
+
+        Returns:
+            str: The user input.
+        """
+        return user_input
+
+    def can_handle_report(self) -> bool:
+        """This method is called to check that the plugin can
+        handle the report method.
+
+        Returns:
+            bool: True if the plugin can handle the report method."""
+        return False
+
+    def report(self, message: str) -> None:
+        """This method is called to report a message to the user.
+
+        Args:
+            message (str): The message to report.
+        """
