@@ -1,8 +1,9 @@
-from . import AutoGPTDollyPlugin
-from .flock import Flock
 import json
 from pathlib import Path
 from typing import Optional
+
+from . import AutoGPTDollyPlugin
+from .flock import Flock
 
 plugin = AutoGPTDollyPlugin()
 

@@ -2,10 +2,11 @@ import importlib
 import os
 from pathlib import Path
 from unittest.mock import ANY, MagicMock, patch
+
 import pytest
 from pytest_mock import MockerFixture
-from autogpt.config.config import Config
 
+from autogpt.config.config import Config
 from autogpt.workspace.workspace import Workspace
 
 

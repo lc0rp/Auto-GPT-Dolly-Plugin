@@ -1,8 +1,8 @@
 import logging
 import os
-from pathlib import Path
 import platform
 import subprocess
+from pathlib import Path
 
 try:
     from autogpt.config.config import Config

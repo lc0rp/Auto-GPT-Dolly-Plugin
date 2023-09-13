@@ -1,6 +1,6 @@
 import logging
-from autogpt.singleton import Singleton
 
+from autogpt.singleton import Singleton
 
 from .dolly import Dolly
 
