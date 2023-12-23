@@ -4,6 +4,14 @@
 
 This plugin adds a "clone_autogpt" command that lets Auto-GPT build an army of powerful minions. AutoGPT can already create AI agents, but sometimes it helps to be able to create additional AutoGTP processes, which can access the tools, plugins and full functionality of AutoGTP.
 
+## Status: Deprecated
+
+I've had a ton of fun working on Dolly, but the landscape's changed since this plugin was created, and there are many ways to create multi agents, within Auto-GPT and elsewhere: Autogen,Semantic Kernel, etc. 
+
+This repository will be archived soon.
+
+## The 'clone_autogpt' command 
+
 The "clone_autogpt" command starts a new AutoGPT process, optionally with its own memory, instructions and output files. The processes run in continuous mode for 5 cycles by default. See the Configuration section for how to increase or decrease the number of cycles.
 
 **Concurrency**: As a bonus, the separate processes run concurrently, which can reduce up total execution time for your task.
