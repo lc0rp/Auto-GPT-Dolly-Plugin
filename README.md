@@ -6,7 +6,7 @@ This plugin adds a "clone_autogpt" command that lets Auto-GPT build an army of p
 
 ## Status: Deprecated
 
-I've had a ton of fun working on Dolly, but the landscape's changed since this plugin was created, and there are many ways to create multi agents, within Auto-GPT and elsewhere: Autogen,Semantic Kernel, etc. 
+I've had a ton of fun working on Dolly, but the landscape's changed since this plugin was created, and there are now many more ways to create multi agents, within Auto-GPT and elsewhere: Autogen,Semantic Kernel, etc. 
 
 This repository will be archived soon.
 
